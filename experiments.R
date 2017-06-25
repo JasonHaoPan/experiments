@@ -2,7 +2,8 @@ library(wskm)
 library(caret)
 library(clue)
 library(maxmatching)
-path <- "C:/Users/admin/Desktop/SZU/1_Dataset/Lymphoma.csv"
+library(SNFtool)
+path <- "~/Desktop/SZU/1_Dataset/Lymphoma.csv"
 
 test_data <- read.csv(path, header = TRUE, sep = ',')
 
@@ -85,6 +86,8 @@ for(i in 1:5){
   cluster_table <- table(as.integer(clusterA), as.integer(clusterB))
   cluster_table
   results <- confusionMatrix(cluster_table)
+  results
+  results$byClass[1,1]
   #######################################################################
   #                            accuracy                                 #
   #######################################################################
@@ -94,17 +97,19 @@ for(i in 1:5){
   #######################################################################
   #                  precision(AKA Pos Pred Value)                      #
   #######################################################################
+  precision_results <- c()
   for(i in 1 : nrow(cluster_table)){
-    precision[i] <- results$byClass[i, 5]
-    cat('The precision of cluster ', i, ' is ', precision[i], '\n')
+    precision_results[i] <- results$byClass[i, 5]
+    cat('The precision of cluster ', i, ' is ',precision_results[i], '\n')
   }
   cat('---------------------------------------------------------------\n')
   #######################################################################
   #                   recall(AKA Sensitivity)                           #
   #######################################################################
+  recall_results <- c()
   for(i in 1 : nrow(cluster_table)){
-    recall[i] <- results$byClass[i, 1]
-    cat('The recall of cluster ', i, ' is ', recall[i], '\n')
+    recall_results[i] <- results$byClass[i, 1]
+    cat('The recall of cluster ', i, ' is ', recall_results[i], '\n')
   }
   cat('---------------------------------------------------------------\n')
   #######################################################################
@@ -118,12 +123,17 @@ for(i in 1:5){
   #   f_measure[i] <- f_measure[i] + 2*precision[i]*recall[i]/(precision[i]+recall[i])
   #   cat('The F-measure of cluster ', i, ' is ', f_measure[i], '\n')
   # }
-  
+  f_measure <- c()
   for(i in 1 : nrow(cluster_table)){
     f_measure[i] <- results$byClass[i, 7]
     cat('The F-measure of cluster ', i, ' is ', f_measure[i], '\n')
   }
   cat('---------------------------------------------------------------\n')
+  #######################################################################
+  #              Normalized Mutual Information(NMI)                     #
+  #######################################################################
+  nmi <- calNMI(clusterA, clusterB)
+  cat('The normalized mutual information is ',nmi,'\n')
   Sys.sleep(2)
   cat('\n\n')
 }
