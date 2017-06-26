@@ -44,27 +44,26 @@ minWeightBipartiteMatching <- function(clusteringA, clusteringB) {
   attr(result, "assignmentMatrix") <- assignmentMatrix
   return(result)
 }
-sum <- 0;
+rand_sum <- 0
+accuracy_sum <- 0
+precision_sum <- 0
+recall_sum <- 0
+fmeasure_sum <- 0
+nmi_sum <- 0
+
 for(i in 1:5){
   cat('***************************************************************\n')
   cat('Calculating the', i,'time......\n')
   Sys.sleep(2)
-  seed=-1
-  if(seed<=0){
-    seed <-runif(1,0,10000000)[1]
-  }
-  set.seed(seed)
+  # seed=-1
+  # if(seed<=0){
+  #   seed <-runif(1,46,50)[1]
+  # }
+  # set.seed(42)
   km <- ewkm(test_data, 3, maxrestart=-1)
   real.cluster <- c(rep(1,42), rep(2,9), rep (3,11))
   #real.cluster <- test_data
   predict.cluster <- c(km$cluster)
-  # calculate rand index
-  std <- std.ext(as.integer(predict.cluster),as.integer(real.cluster))
-  rand_ind <- clv.Rand(std)
-  cat('---------------------------------------------------------------\n')
-  cat('Rand index is: ', rand_ind, '\n')
-  cat('---------------------------------------------------------------\n')
-  sum <- sum+rand_ind
   
   # matching clusters
   # minWeightBipartiteMatching(predict.cluster, real.cluster)
@@ -74,25 +73,35 @@ for(i in 1:5){
   #                matching and permuting cluster                       #
   #######################################################################
   matching <- minWeightBipartiteMatching(predict.cluster, real.cluster)
-  matching
   clusterA <- predict.cluster  # map the labels from cluster A
   tmp <- sapply(1:length(matching), function(i) {
     clusterA[which(predict.cluster == i)] <<- matching[i]
   })
   clusterB <-  real.cluster
   
-  # clusterA
-  # clusterB
   
   cluster_table <- table(as.integer(clusterA), as.integer(clusterB))
-  cluster_table
+
   results <- confusionMatrix(cluster_table)
-  results
-  results$byClass[1,1]
+  
+  #######################################################################
+  #                            Rand Index                               #
+  #######################################################################
+  # std <- std.ext(as.integer(predict.cluster),as.integer(real.cluster))
+  # rand_ind <- clv.Rand(std)
+  # cat('---------------------------------------------------------------\n')
+  # cat('Rand index is: ', rand_ind, '\n')
+  # cat('---------------------------------------------------------------\n')
+  rand_results <-com_accuracy(clusterA, clusterB,method = 4)
+  rand_sum <- rand_sum + rand_results
+  cat('The Rand Index between clusters ', ' is ',rand_results, '\n')
+  cat('---------------------------------------------------------------\n')
+  
   #######################################################################
   #                            accuracy                                 #
   #######################################################################
   overall.accuracy <- results$overall['Accuracy']
+  accuracy_sum <- accuracy_sum + overall.accuracy
   cat('The overall accuracy is ', overall.accuracy, '\n')
   cat('---------------------------------------------------------------\n')
   #######################################################################
@@ -104,8 +113,10 @@ for(i in 1:5){
   #   cat('The precision of cluster ', i, ' is ',precision_results[i], '\n')
   # }
   precision_results <-com_accuracy(clusterA, clusterB,method = 1)
+  precision_sum <- precision_sum + precision_results
   cat('The precision between clusters ', ' is ',precision_results, '\n')
   cat('---------------------------------------------------------------\n')
+  
   #######################################################################
   #                   recall(AKA Sensitivity)                           #
   #######################################################################
@@ -115,6 +126,7 @@ for(i in 1:5){
   #   cat('The recall of cluster ', i, ' is ', recall_results[i], '\n')
   # }
   recall_results <- com_accuracy(clusterA, clusterB,method = 2)
+  recall_sum <- recall_sum + recall_results
   cat('The recall between two clusters', ' is ',recall_results, '\n')
   cat('---------------------------------------------------------------\n')
   #######################################################################
@@ -134,18 +146,22 @@ for(i in 1:5){
   #   cat('The F-measure of cluster ', i, ' is ', f_measure[i], '\n')
   # }
   f_measure <-  com_accuracy(clusterA, clusterB, mybeta = 1, method = 3)
+  fmeasure_sum <- fmeasure_sum + f_measure
   cat('The f-measure between two clusters', ' is ',f_measure, '\n')
   cat('---------------------------------------------------------------\n')
   #######################################################################
   #              Normalized Mutual Information(NMI)                     #
   #######################################################################\
-  cat(predict.cluster,'\n', real.cluster, '\n', clusterA, '\n', clusterB)
+  # cat(predict.cluster,'\n', real.cluster, '\n', clusterA, '\n', clusterB)
   nmi <- calNMI(clusterA, clusterB)
+  nmi_sum <- nmi_sum + nmi
   cat('The normalized mutual information is ',nmi,'\n')
   cat('---------------------------------------------------------------\n')
-  
-  Sys.sleep(2)
+  Sys.sleep(1)
   cat('\n\n')
 }
-avg <- sum/5
+
+avg <- c(rand_sum/5, accuracy_sum/5, precision_sum/5, recall_sum/5, fmeasure_sum/5, nmi_sum/5)
+names(avg) <- c("Rand Index", "Accuracy", "Precision", "Recall", "F-measure", "NMI")
 print(avg)
+write.csv(avg, "C:/Users/admin/Desktop/Lymphoma_result.csv")
