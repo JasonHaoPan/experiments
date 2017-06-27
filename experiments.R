@@ -4,33 +4,36 @@ library(clue)
 library(maxmatching)
 library(SNFtool)
 source('standard.R')
-path <- "C:/Users/admin/Desktop/SZU/1_Dataset/Lymphoma.csv"
+# path <- "C:/Users/admin/Desktop/SZU/1_Dataset/Lymphoma.csv"
 
-test_data <- read.csv(path, header = TRUE, sep = ',')
+
 
 #######################################################################
 #                      Initialize group                              #
 #######################################################################
-
-#######################################################################
-#               Calculate groupinfo from data set                     #
-#######################################################################
-arr_to_group <- function(x){
-  i <- 1
-  feat_to_group <- c() 
-  for (i in 1:length(x)){
-    if (x[i] == 1){
-      if (i %% feature_group_num == 0) 
-        i <- feature_group_num
-      else
-        i <- i %% feature_group_num
-      feat_to_group <- c(feat_to_group,i) 
-      groupInfo <<- feat_to_group
-      
-    }
-  }
-  return (groupInfo)
+initialize_group <- function(feature_num,group_num){
+  my_group <- sample(1:group_num,feature_num,replace = TRUE)
 }
+
+# #######################################################################
+# #               Calculate groupinfo from data set                     #
+# #######################################################################
+# arr_to_group <- function(x){
+#   i <- 1
+#   feat_to_group <- c() 
+#   for (i in 1:length(x)){
+#     if (x[i] == 1){
+#       if (i %% feature_group_num == 0) 
+#         i <- feature_group_num
+#       else
+#         i <- i %% feature_group_num
+#       feat_to_group <- c(feat_to_group,i) 
+#       groupInfo <<- feat_to_group
+#       
+#     }
+#   }
+#   return (groupInfo)
+# }
 #######################################################################
 #                         match                                       #
 #######################################################################
@@ -74,7 +77,7 @@ minWeightBipartiteMatching <- function(clusteringA, clusteringB) {
 # parameter: alg <- 1 kmeans; 2 fgkmeans; 3  ewkmeans; 4 ## 
 #           test_data
 #           center: number of center
-calculate_benchmark <- function(alg,test_data, center){
+calculate_benchmark <- function(alg,test_data, center, real_cluster){
   
   rand_sum <- 0 
   accuracy_sum <- 0
@@ -84,50 +87,50 @@ calculate_benchmark <- function(alg,test_data, center){
   nmi_sum <- 0
   
   for(i in 1:5){
+    
+    # set.seed(42)
+    if(alg == 1){
+      # cat('----------------------Using K-means algorithm--------------------------------\n')
+      km <- kmeans(test_data, center)
+      
+    }
+    else if(alg == 2){
+      # cat('----------------------Using FGK-means algorithm--------------------------------\n')
+      grouping = initialize_group(ncol(test_data),3)
+      km <- fgkm(test_data,center,grouping, 1, 1)
+      center
+      km$cluster
+    }
+    else if(alg == 3){
+      # cat('----------------------Using EWK-means algorithm--------------------------------\n')
+      km <- ewkm(test_data, center, maxrestart=-1)
+    }
+    else
+      # cat('----------------------Using EWK-means algorithm--------------------------------\n')
+    
+    
     cat('***************************************************************\n')
     cat('Calculating the', i,'time......\n')
     Sys.sleep(1)
-    # seed=-1
-    # if(seed<=0){
-    #   seed <-runif(1,46,50)[1]
-    # }
-    # set.seed(42)
-    if(alg == 1){
-      cat('----------------------Using K-means algorithm--------------------------------\n')
-      km <- kmeans(test_data, center)
-    }
-    else if(alg == 2){
-      cat('----------------------Using FGK-means algorithm--------------------------------\n')
-      groups <- arr_to_group()
-      km <- fgkm(test_data,center)
-    }
-    else if(alg == 3){
-      cat('----------------------Using EWK-means algorithm--------------------------------\n')
-      km <- ewkm(test_data, center, maxrestart=-1)
-    }
-    else if(alg == 4){
-      cat('----------------------Using EWK-means algorithm--------------------------------\n')
-    }
-    
-    
-    
-    real.cluster <- c(rep(1,42), rep(2,9), rep (3,11))
+    real.cluster <- real_cluster
+    km$cluster
     predict.cluster <- c(km$cluster)
-    
+    predict.cluster
+    center
     # matching clusters
-    # minWeightBipartiteMatching(predict.cluster, real.cluster)
+    minWeightBipartiteMatching(predict.cluster, real.cluster)
     #permuting predictive cluster
     
     #######################################################################
     #                matching and permuting cluster                       #
     #######################################################################
+    
     matching <- minWeightBipartiteMatching(predict.cluster, real.cluster)
     clusterA <- predict.cluster  # map the labels from cluster A
     tmp <- sapply(1:length(matching), function(i) {
       clusterA[which(predict.cluster == i)] <<- matching[i]
     })
     clusterB <-  real.cluster
-    
     
     cluster_table <- table(as.integer(clusterA), as.integer(clusterB))
   
@@ -213,7 +216,52 @@ calculate_benchmark <- function(alg,test_data, center){
   avg <- c(rand_sum/5, accuracy_sum/5, precision_sum/5, recall_sum/5, fmeasure_sum/5, nmi_sum/5)
   names(avg) <- c("Rand Index", "Accuracy", "Precision", "Recall", "F-measure", "NMI")
   print(avg)
+  Sys.sleep(3)
   write.csv(avg, "C:/Users/admin/Desktop/Lymphoma_result.csv")
 }
 
-calculate_benchmark(1, test_data, 3)
+# calculate_benchmark(1, test_data, 3)
+
+getpath <- function()
+{
+  filenames <- list.files("C:/Users/admin/Desktop/SZU/1_Dataset/", pattern = ".csv")
+  path <- list()
+  for(i in 1:length(filenames))
+  {
+    path[i] <- paste("C:/Users/admin/Desktop/SZU/1_Dataset/",filenames[i], sep = "")
+  }
+  return(path)
+}
+
+
+
+  for(i in 1:length(path))
+  {
+    test_data <- read.csv(as.character(path[i]), header = TRUE, sep = ',')
+    cat("\n", as.character(path[i]), "\n\n")
+    Sys.sleep(3)
+    real_cluster <-test_data[,1]+1
+    table(real_cluster)
+    center <- length(table(real_cluster))
+    predict.cluster
+    real.cluster
+    # calculate_benchmark(3, test_data, center, real_cluster)
+    for(i in 1:3)
+    {
+      if(i == 1)
+      {
+        cat("***********Using K-means Algorithm***********\n")
+      }
+      else if(i == 2)
+      {
+        cat("***********Using FGK-means Algorithm***********\n")
+      }
+      else if(i == 3)
+      {
+        cat("***********Using EWK-means Algorithm***********\n")
+      }
+      calculate_benchmark(i, test_data, center, real_cluster)
+    }
+  }
+
+
