@@ -8,7 +8,9 @@ path <- "C:/Users/admin/Desktop/SZU/1_Dataset/Lymphoma.csv"
 
 test_data <- read.csv(path, header = TRUE, sep = ',')
 
-
+#######################################################################
+#                      Initialize group                              #
+#######################################################################
 
 #######################################################################
 #               Calculate groupinfo from data set                     #
