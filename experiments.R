@@ -167,18 +167,28 @@ for(i in 1:length(filenames))
 {
   path <- paste("C:/Users/admin/Desktop/SZU/1_Dataset/",filenames[i], sep = "")
   test_data <- read.csv(as.character(path), header = TRUE, sep = ',')
-  # cat(as.character(path),"\n")
+  cat(as.character(path),"\n")
   Sys.sleep(3)
   if(filenames[i]=="CNS.csv"||
       filenames[i]=="Colon.csv"||
         filenames[i]=="Leukemia_3c.csv"||
           filenames[i]=="Leukemia_4c.csv"){
-    col <- ncol(test_data) 
-    real_cluster <- as.numeric(test_data[,col])
+    cat("\nCatch\n")
+    col <- ncol(test_data)
+    if(filenames[i]=="CNS.csv"){
+      real_cluster <- as.numeric(test_data[,col]+1)
+    }else{
+      real_cluster <- as.numeric(test_data[,col])
+    }
+    real_cluster
+    # real_cluster
     test_data <- test_data[,-col]
   }else{
-    real_cluster <- (test_data[,1]+1)
-    real_cluster
+    if(filenames[i]=="LeukemiaTXT.csv"){
+      real_cluster <- as.numeric(test_data[,1])
+    }else{
+      real_cluster <- (test_data[,1]+1)
+    }
     test_data <- test_data[,-1]
   }
   table(real_cluster)
@@ -194,8 +204,8 @@ for(i in 1:length(filenames))
     }else if(j == 2)
     {
       cat("***************Using FGK-means Algorithm***************\n")
-      fgkmeans_alg <- calculate_benchmark(j, test_data, center, real_cluster)
-      bench_result <- cbind(bench_result,fgkmeans_alg)
+      # fgkmeans_alg <- calculate_benchmark(j, test_data, center, real_cluster)
+      # bench_result <- cbind(bench_result,fgkmeans_alg)
     }else if(j == 3)
     {
       cat("***************Using EWK-means Algorithm***************\n")
@@ -213,6 +223,6 @@ for(i in 1:length(filenames))
   cat("Writing to file...\n")
   Sys.sleep(3)
   write.csv(bench_result, outputpath)
-  cat("Done")
+  cat("Done\n")
 }
 
