@@ -4,6 +4,7 @@ library(clue)
 library(maxmatching)
 library(SNFtool)
 source('standard.R')
+source('matching.R')
 # path <- "C:/Users/admin/Desktop/SZU/1_Dataset/Lymphoma.csv"
 
 
@@ -15,61 +16,6 @@ initialize_group <- function(feature_num,group_num){
   my_group <- sample(1:group_num,feature_num,replace = TRUE)
 }
 
-# #######################################################################
-# #               Calculate groupinfo from data set                     #
-# #######################################################################
-# arr_to_group <- function(x){
-#   i <- 1
-#   feat_to_group <- c() 
-#   for (i in 1:length(x)){
-#     if (x[i] == 1){
-#       if (i %% feature_group_num == 0) 
-#         i <- feature_group_num
-#       else
-#         i <- i %% feature_group_num
-#       feat_to_group <- c(feat_to_group,i) 
-#       groupInfo <<- feat_to_group
-#       
-#     }
-#   }
-#   return (groupInfo)
-# }
-#######################################################################
-#                         match                                       #
-#######################################################################
-# labels from cluster A will be matched on the labels from cluster B
-minWeightBipartiteMatching <- function(clusteringA, clusteringB) {
-  require(clue)
-  idsA <- unique(clusteringA)  # distinct cluster ids in a
-  idsB <- unique(clusteringB)  # distinct cluster ids in b
-  nA <- length(clusteringA)  # number of instances in a
-  nB <- length(clusteringB)  # number of instances in b
-  if (length(idsA) != length(idsB) || nA != nB) {
-    stop("number of cluster or number of instances do not match")
-  }
-  
-  nC <- length(idsA)
-  tupel <- c(1:nA)
-  
-  # computing the distance matrix
-  assignmentMatrix <- matrix(rep(-1, nC * nC), nrow = nC)
-  for (i in 1:nC) {
-    tupelClusterI <- tupel[clusteringA == i]
-    solRowI <- sapply(1:nC, function(i, clusterIDsB, tupelA_I) {
-      nA_I <- length(tupelA_I)  # number of elements in cluster I
-      tupelB_I <- tupel[clusterIDsB == i]
-      nB_I <- length(tupelB_I)
-      nTupelIntersect <- length(intersect(tupelA_I, tupelB_I))
-      return((nA_I - nTupelIntersect) + (nB_I - nTupelIntersect))
-    }, clusteringB, tupelClusterI)
-    assignmentMatrix[i, ] <- solRowI
-  }
-  
-  # optimization
-  result <- solve_LSAP(assignmentMatrix, maximum = FALSE)
-  attr(result, "assignmentMatrix") <- assignmentMatrix
-  return(result)
-}
 
 #######################################################################
 #                     Calculate benchmark                             #
@@ -87,28 +33,22 @@ calculate_benchmark <- function(alg,test_data, center, real_cluster){
   nmi_sum <- 0
   
   for(i in 1:5){
-    
     # set.seed(42)
     if(alg == 1){
       # cat('----------------------Using K-means algorithm--------------------------------\n')
       km <- kmeans(test_data, center)
-      
-    }
-    else if(alg == 2){
+    }else if(alg == 2){
       # cat('----------------------Using FGK-means algorithm--------------------------------\n')
-      grouping = initialize_group(ncol(test_data),3)
-      km <- fgkm(test_data,center,grouping, 1, 1)
-      center
-      km$cluster
-    }
-    else if(alg == 3){
+      grouping <- initialize_group(ncol(test_data),3)
+      km <- fgkm(test_data, center, grouping, 1, 1)
+    }else if(alg == 3){
       # cat('----------------------Using EWK-means algorithm--------------------------------\n')
       km <- ewkm(test_data, center, maxrestart=-1)
+    }else if(alg == 4){
+      # cat('----------------------Using TWK-means algorithm--------------------------------\n')
+      grouping <- initialize_group(ncol(test_data), 3)
+      km <- twkm(test_data, center,grouping, 1, 1)
     }
-    else
-      # cat('----------------------Using EWK-means algorithm--------------------------------\n')
-    
-    
     cat('***************************************************************\n')
     cat('Calculating the', i,'time......\n')
     Sys.sleep(1)
@@ -118,24 +58,22 @@ calculate_benchmark <- function(alg,test_data, center, real_cluster){
     predict.cluster
     center
     # matching clusters
+    predict.cluster
+    real.cluster
     minWeightBipartiteMatching(predict.cluster, real.cluster)
     #permuting predictive cluster
     
     #######################################################################
     #                matching and permuting cluster                       #
     #######################################################################
-    
     matching <- minWeightBipartiteMatching(predict.cluster, real.cluster)
     clusterA <- predict.cluster  # map the labels from cluster A
     tmp <- sapply(1:length(matching), function(i) {
       clusterA[which(predict.cluster == i)] <<- matching[i]
     })
     clusterB <-  real.cluster
-    
     cluster_table <- table(as.integer(clusterA), as.integer(clusterB))
-  
     results <- confusionMatrix(cluster_table)
-    
     #######################################################################
     #                            Rand Index                               #
     #######################################################################
@@ -217,51 +155,64 @@ calculate_benchmark <- function(alg,test_data, center, real_cluster){
   names(avg) <- c("Rand Index", "Accuracy", "Precision", "Recall", "F-measure", "NMI")
   print(avg)
   Sys.sleep(3)
-  write.csv(avg, "C:/Users/admin/Desktop/Lymphoma_result.csv")
+  
+  return(avg)
 }
 
-# calculate_benchmark(1, test_data, 3)
 
-getpath <- function()
+
+filenames <- list.files("C:/Users/admin/Desktop/SZU/1_Dataset/", pattern = ".csv")
+filenames
+for(i in 1:length(filenames))
 {
-  filenames <- list.files("C:/Users/admin/Desktop/SZU/1_Dataset/", pattern = ".csv")
-  path <- list()
-  for(i in 1:length(filenames))
-  {
-    path[i] <- paste("C:/Users/admin/Desktop/SZU/1_Dataset/",filenames[i], sep = "")
+  path <- paste("C:/Users/admin/Desktop/SZU/1_Dataset/",filenames[i], sep = "")
+  test_data <- read.csv(as.character(path), header = TRUE, sep = ',')
+  # cat(as.character(path),"\n")
+  Sys.sleep(3)
+  if(filenames[i]=="CNS.csv"||
+      filenames[i]=="Colon.csv"||
+        filenames[i]=="Leukemia_3c.csv"||
+          filenames[i]=="Leukemia_4c.csv"){
+    col <- ncol(test_data) 
+    real_cluster <- as.numeric(test_data[,col])
+    test_data <- test_data[,-col]
+  }else{
+    real_cluster <- (test_data[,1]+1)
+    real_cluster
+    test_data <- test_data[,-1]
   }
-  return(path)
-}
-
-
-
-  for(i in 1:length(path))
+  table(real_cluster)
+  center <- length(table(real_cluster))
+  bench_result <- c()
+  for(j in 1:4)
   {
-    test_data <- read.csv(as.character(path[i]), header = TRUE, sep = ',')
-    cat("\n", as.character(path[i]), "\n\n")
-    Sys.sleep(3)
-    real_cluster <-test_data[,1]+1
-    table(real_cluster)
-    center <- length(table(real_cluster))
-    predict.cluster
-    real.cluster
-    # calculate_benchmark(3, test_data, center, real_cluster)
-    for(i in 1:3)
+    if(j == 1)
     {
-      if(i == 1)
-      {
-        cat("***********Using K-means Algorithm***********\n")
-      }
-      else if(i == 2)
-      {
-        cat("***********Using FGK-means Algorithm***********\n")
-      }
-      else if(i == 3)
-      {
-        cat("***********Using EWK-means Algorithm***********\n")
-      }
-      calculate_benchmark(i, test_data, center, real_cluster)
+      cat("***************Using K-means Algorithm***************\n")
+      avg <- calculate_benchmark(j, test_data, center, real_cluster)
+      bench_result <- cbind(bench_result,avg)
+    }else if(j == 2)
+    {
+      cat("***************Using FGK-means Algorithm***************\n")
+    }else if(j == 3)
+    {
+      cat("***************Using EWK-means Algorithm***************\n")
+    }else if(j == 4)
+    {
+      cat("***************Using EWK-means Algorithm***************\n")
     }
+    
+    
+    # colnames(bench_result) <- c("K-means", "FGK-means", "EWK-means", "TWK-means")
+  
+    # write.csv(avg, "C:/Users/admin/Desktop/Lymphoma_result.csv")
   }
-
+  
+  outputpath <- paste("C:/Users/admin/Desktop/result/",filenames[i],sep = "")
+  cat("Writing to file...\n")
+  Sys.sleep(3)
+  write.csv(bench_result, outputpath)
+  cat("Done")
+  
+}
 
