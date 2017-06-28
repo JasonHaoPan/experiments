@@ -189,23 +189,24 @@ for(i in 1:length(filenames))
     if(j == 1)
     {
       cat("***************Using K-means Algorithm***************\n")
-      avg <- calculate_benchmark(j, test_data, center, real_cluster)
-      bench_result <- cbind(bench_result,avg)
+      kmeans_alg <- calculate_benchmark(j, test_data, center, real_cluster)
+      bench_result <- cbind(bench_result,kmeans_alg)
     }else if(j == 2)
     {
       cat("***************Using FGK-means Algorithm***************\n")
+      fgkmeans_alg <- calculate_benchmark(j, test_data, center, real_cluster)
+      bench_result <- cbind(bench_result,fgkmeans_alg)
     }else if(j == 3)
     {
       cat("***************Using EWK-means Algorithm***************\n")
+      ewkmeans_alg <- calculate_benchmark(j, test_data, center, real_cluster)
+      bench_result <- cbind(bench_result,ewkmeans_alg)
     }else if(j == 4)
     {
       cat("***************Using EWK-means Algorithm***************\n")
+      twkmeans_alg <- calculate_benchmark(j, test_data, center, real_cluster)
+      bench_result <- cbind(bench_result,twkmeans_alg)
     }
-    
-    
-    # colnames(bench_result) <- c("K-means", "FGK-means", "EWK-means", "TWK-means")
-  
-    # write.csv(avg, "C:/Users/admin/Desktop/Lymphoma_result.csv")
   }
   
   outputpath <- paste("C:/Users/admin/Desktop/result/",filenames[i],sep = "")
@@ -213,6 +214,5 @@ for(i in 1:length(filenames))
   Sys.sleep(3)
   write.csv(bench_result, outputpath)
   cat("Done")
-  
 }
 
