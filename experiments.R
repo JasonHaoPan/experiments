@@ -55,11 +55,8 @@ calculate_benchmark <- function(alg,test_data, center, real_cluster){
     real.cluster <- real_cluster
     km$cluster
     predict.cluster <- c(km$cluster)
-    predict.cluster
-    center
+
     # matching clusters
-    predict.cluster
-    real.cluster
     minWeightBipartiteMatching(predict.cluster, real.cluster)
     #permuting predictive cluster
     
@@ -90,9 +87,9 @@ calculate_benchmark <- function(alg,test_data, center, real_cluster){
     #######################################################################
     #                            accuracy                                 #
     #######################################################################
-    overall.accuracy <- results$overall['Accuracy']
-    accuracy_sum <- accuracy_sum + overall.accuracy
-    cat('The overall accuracy is ', overall.accuracy, '\n')
+    accuracy_results <-com_accuracy(clusterA, clusterB,method = 0)
+    accuracy_sum <- accuracy_sum + accuracy_results
+    cat('The overall accuracy is ', accuracy_results, '\n')
     cat('---------------------------------------------------------------\n')
     #######################################################################
     #                  precision(AKA Pos Pred Value)                      #
@@ -158,8 +155,6 @@ calculate_benchmark <- function(alg,test_data, center, real_cluster){
   
   return(avg)
 }
-
-
 
 filenames <- list.files("C:/Users/admin/Desktop/SZU/1_Dataset/", pattern = ".csv")
 filenames

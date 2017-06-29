@@ -4,17 +4,19 @@
 # labels from cluster A will be matched on the labels from cluster B
 minWeightBipartiteMatching <- function(clusteringA, clusteringB) {
   require(clue)
+
   idsA <- unique(clusteringA)  # distinct cluster ids in a
   idsB <- unique(clusteringB)  # distinct cluster ids in b
   nA <- length(clusteringA)  # number of instances in a
   nB <- length(clusteringB)  # number of instances in b
   
-  if (length(idsA) != length(idsB) || nA != nB) {
-    # if(nA != nB) {
+  if (nA != nB) {
     stop("number of cluster or number of instances do not match")
   }
-  
-  nC <- length(idsA)
+  if (length(idsA) != length(idsB) ){
+    
+  }
+  nC <- length(idsB)
   tupel <- c(1:nA)
   
   # computing the distance matrix
