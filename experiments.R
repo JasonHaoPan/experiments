@@ -3,6 +3,8 @@ library(caret)
 library(clue)
 library(maxmatching)
 library(SNFtool)
+library(kernlab)
+library(speccalt)
 source('standard.R')
 source('matching.R')
 # path <- "C:/Users/admin/Desktop/SZU/1_Dataset/Lymphoma.csv"
@@ -37,29 +39,34 @@ calculate_benchmark <- function(alg,test_data, center, real_cluster){
     if(alg == 1){
       # cat('----------------------Using K-means algorithm--------------------------------\n')
       km <- kmeans(test_data, center)
+      predict.cluster <- c(km$cluster)
     }else if(alg == 2){
       # cat('----------------------Using FGK-means algorithm--------------------------------\n')
       grouping <- initialize_group(ncol(test_data),3)
       km <- fgkm(test_data, center, grouping, 1, 1)
+      predict.cluster <- c(km$cluster)
     }else if(alg == 3){
       # cat('----------------------Using EWK-means algorithm--------------------------------\n')
       km <- ewkm(test_data, center, maxrestart=-1)
+      predict.cluster <- c(km$cluster)
     }else if(alg == 4){
       # cat('----------------------Using TWK-means algorithm--------------------------------\n')
       grouping <- initialize_group(ncol(test_data), 3)
       km <- twkm(test_data, center,grouping, 1, 1)
+      predict.cluster <- c(km$cluster)
+    }else if(alg == 5){
+      # cat('----------------------Using Spectral Clustering algorithm--------------------------------\n')
+      km <- speccl(test_data, center)
+      predict.cluster <- c(km$clusters)
     }
     cat('***************************************************************\n')
     cat('Calculating the', i,'time......\n')
     Sys.sleep(1)
     real.cluster <- real_cluster
-    km$cluster
-    predict.cluster <- c(km$cluster)
-
+   
     # matching clusters
     minWeightBipartiteMatching(predict.cluster, real.cluster)
     #permuting predictive cluster
-    
     #######################################################################
     #                matching and permuting cluster                       #
     #######################################################################
@@ -116,30 +123,18 @@ calculate_benchmark <- function(alg,test_data, center, real_cluster){
     recall_sum <- recall_sum + recall_results
     cat('The recall between two clusters', ' is ',recall_results, '\n')
     cat('---------------------------------------------------------------\n')
+    
     #######################################################################
     #                     F-measure(AKA  F1 Score)                        #
     #######################################################################
-    
-    #use my own function
-    # for(i in 1 : nrow(cluster_table))
-    # {
-    #   f_measure[i] <- 0;
-    #   f_measure[i] <- f_measure[i] + 2*precision[i]*recall[i]/(precision[i]+recall[i])
-    #   cat('The F-measure of cluster ', i, ' is ', f_measure[i], '\n')
-    # }
-    # f_measure <- c()
-    # for(i in 1 : nrow(cluster_table)){
-    #   f_measure[i] <- results$byClass[i, 7]
-    #   cat('The F-measure of cluster ', i, ' is ', f_measure[i], '\n')
-    # }
     f_measure <-  com_accuracy(clusterA, clusterB, mybeta = 1, method = 3)
     fmeasure_sum <- fmeasure_sum + f_measure
     cat('The f-measure between two clusters', ' is ',f_measure, '\n')
     cat('---------------------------------------------------------------\n')
+    
     #######################################################################
     #              Normalized Mutual Information(NMI)                     #
     #######################################################################\
-    # cat(predict.cluster,'\n', real.cluster, '\n', clusterA, '\n', clusterB)
     nmi <- calNMI(clusterA, clusterB)
     nmi_sum <- nmi_sum + nmi
     cat('The normalized mutual information is ',nmi,'\n')
@@ -157,7 +152,6 @@ calculate_benchmark <- function(alg,test_data, center, real_cluster){
 }
 
 filenames <- list.files("C:/Users/admin/Desktop/SZU/1_Dataset/", pattern = ".csv")
-filenames
 for(i in 1:length(filenames))
 {
   path <- paste("C:/Users/admin/Desktop/SZU/1_Dataset/",filenames[i], sep = "")
@@ -168,15 +162,14 @@ for(i in 1:length(filenames))
       filenames[i]=="Colon.csv"||
         filenames[i]=="Leukemia_3c.csv"||
           filenames[i]=="Leukemia_4c.csv"){
-    cat("\nCatch\n")
+    
     col <- ncol(test_data)
     if(filenames[i]=="CNS.csv"){
       real_cluster <- as.numeric(test_data[,col]+1)
     }else{
       real_cluster <- as.numeric(test_data[,col])
     }
-    real_cluster
-    # real_cluster
+    
     test_data <- test_data[,-col]
   }else{
     if(filenames[i]=="LeukemiaTXT.csv"){
@@ -189,35 +182,50 @@ for(i in 1:length(filenames))
   table(real_cluster)
   center <- length(table(real_cluster))
   bench_result <- c()
-  for(j in 1:4)
+  for(j in 1:5)
   {
     if(j == 1)
     {
-      cat("***************Using K-means Algorithm***************\n")
+      cat("******************Using K-means Algorithm*********************\n")
       kmeans_alg <- calculate_benchmark(j, test_data, center, real_cluster)
       bench_result <- cbind(bench_result,kmeans_alg)
     }else if(j == 2)
     {
-      cat("***************Using FGK-means Algorithm***************\n")
+      cat("*****************Using FGK-means Algorithm*********************\n")
       # fgkmeans_alg <- calculate_benchmark(j, test_data, center, real_cluster)
       # bench_result <- cbind(bench_result,fgkmeans_alg)
     }else if(j == 3)
     {
-      cat("***************Using EWK-means Algorithm***************\n")
+      cat("******************Using EWK-means Algorithm********************\n")
       ewkmeans_alg <- calculate_benchmark(j, test_data, center, real_cluster)
       bench_result <- cbind(bench_result,ewkmeans_alg)
     }else if(j == 4)
     {
-      cat("***************Using EWK-means Algorithm***************\n")
+      cat("******************Using TWK-means Algorithm*********************\n")
       twkmeans_alg <- calculate_benchmark(j, test_data, center, real_cluster)
       bench_result <- cbind(bench_result,twkmeans_alg)
     }
+    else if(j == 5)
+    {
+      cat("***************Using Spectral Clustering Algorithm***************\n")
+      spectral_alg <- calculate_benchmark(j, test_data, center, real_cluster)
+      bench_result <- cbind(bench_result,spectral_alg)
+    }
   }
-  
   outputpath <- paste("C:/Users/admin/Desktop/result/",filenames[i],sep = "")
   cat("Writing to file...\n")
   Sys.sleep(3)
   write.csv(bench_result, outputpath)
   cat("Done\n")
 }
+
+
+
+# library(clusterSim)
+# 
+# test <- read.csv("C:/Users/admin/Desktop/SZU/1_Dataset/adenocarcinoma.csv", header = TRUE, sep = ",")
+# test <- test[, -1]
+# 
+# res <- speccl(test, nc = 2)
+# res$clusters
 
