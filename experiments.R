@@ -5,6 +5,7 @@ library(maxmatching)
 library(SNFtool)
 library(kernlab)
 library(speccalt)
+library(R.matlab)
 source('standard.R')
 source('matching.R')
 # path <- "C:/Users/admin/Desktop/SZU/1_Dataset/Lymphoma.csv"
@@ -63,7 +64,7 @@ calculate_benchmark <- function(alg,test_data, center, real_cluster){
     cat('Calculating the', i,'time......\n')
     Sys.sleep(1)
     real.cluster <- real_cluster
-   
+    
     # matching clusters
     minWeightBipartiteMatching(predict.cluster, real.cluster)
     #permuting predictive cluster
@@ -152,6 +153,7 @@ calculate_benchmark <- function(alg,test_data, center, real_cluster){
 }
 
 filenames <- list.files("C:/Users/admin/Desktop/SZU/1_Dataset/", pattern = ".csv")
+
 for(i in 1:length(filenames))
 {
   path <- paste("C:/Users/admin/Desktop/SZU/1_Dataset/",filenames[i], sep = "")
@@ -159,9 +161,9 @@ for(i in 1:length(filenames))
   cat(as.character(path),"\n")
   Sys.sleep(3)
   if(filenames[i]=="CNS.csv"||
-      filenames[i]=="Colon.csv"||
-        filenames[i]=="Leukemia_3c.csv"||
-          filenames[i]=="Leukemia_4c.csv"){
+     filenames[i]=="Colon.csv"||
+     filenames[i]=="Leukemia_3c.csv"||
+     filenames[i]=="Leukemia_4c.csv"){
     
     col <- ncol(test_data)
     if(filenames[i]=="CNS.csv"){
@@ -172,14 +174,14 @@ for(i in 1:length(filenames))
     
     test_data <- test_data[,-col]
   }else{
-    if(filenames[i]=="LeukemiaTXT.csv"){
+    if(filenames[i]=="LeukemiaTXT.csv" ||filenames[i]=="wine.data.csv"){
       real_cluster <- as.numeric(test_data[,1])
     }else{
       real_cluster <- (test_data[,1]+1)
     }
     test_data <- test_data[,-1]
   }
-  table(real_cluster)
+  
   center <- length(table(real_cluster))
   bench_result <- c()
   for(j in 1:5)
@@ -220,12 +222,4 @@ for(i in 1:length(filenames))
 }
 
 
-
-# library(clusterSim)
-# 
-# test <- read.csv("C:/Users/admin/Desktop/SZU/1_Dataset/adenocarcinoma.csv", header = TRUE, sep = ",")
-# test <- test[, -1]
-# 
-# res <- speccl(test, nc = 2)
-# res$clusters
 
